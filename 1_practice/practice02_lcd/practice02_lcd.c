@@ -75,5 +75,6 @@ void loop(){
     lcd_putch(' ');                             // 空白を表示
     lcd_goto_line(2);                           // LCDカーソル位置を2行目へ移動
     lcd_putstr(mac.payload);                    // 受信データを表示
+    Serial.println(mac.payload);                // 受信データをシリアル出力
     digitalWrite(PIN_LED_BLUE, 1);              // 青色LEDを消灯
 }

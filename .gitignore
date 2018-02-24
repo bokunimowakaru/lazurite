@@ -54,3 +54,5 @@ dkms.conf
 *.BAK
 *.log
 *.csv
+lock
+
