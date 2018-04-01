@@ -1,14 +1,14 @@
 ////////////////////////////////////////////////////////////////////////////////
 // LazuliteEnvSensor
-// IoTŠÂ‹«ƒZƒ“ƒT‚©‚çŽóM‚µ‚½ƒf[ƒ^‚ðAmbient‚Ö‘—M‚·‚éƒTƒ“ƒvƒ‹‚Å‚·B
+// IoTç’°å¢ƒã‚»ãƒ³ã‚µã‹ã‚‰å—ä¿¡ã—ãŸãƒ‡ãƒ¼ã‚¿ã‚’Ambientã¸é€ä¿¡ã™ã‚‹ã‚µãƒ³ãƒ—ãƒ«ã§ã™ã€‚
 //
-// EAmbientƒm[ƒh‚ðƒ_ƒuƒ‹ƒNƒŠƒbƒN‚µAChannel Id ‚ÆWrite Key‚ð“ü—Í‚µ‚Ä‚­‚¾‚³‚¢B
+// ãƒ»AmbientãƒŽãƒ¼ãƒ‰ã‚’ãƒ€ãƒ–ãƒ«ã‚¯ãƒªãƒƒã‚¯ã—ã€Channel Id ã¨Write Keyã‚’å…¥åŠ›ã—ã¦ãã ã•ã„ã€‚
 //
 //                                              Copyright (c) 2018 Wataru KUNINO
 ////////////////////////////////////////////////////////////////////////////////
 //
-// Node-RED—p UDP Logger Example JSONŒ`Ž®
-// ƒRƒƒ“ƒgs‚Í“]‘—Žž‚ÉŽ©“®íœ‚³‚ê‚Ü‚·
+// Node-REDç”¨ UDP Logger Example JSONå½¢å¼
+// ã‚³ãƒ¡ãƒ³ãƒˆè¡Œã¯è»¢é€æ™‚ã«è‡ªå‹•å‰Šé™¤ã•ã‚Œã¾ã™
 //
 
 [
