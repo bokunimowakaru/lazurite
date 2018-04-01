@@ -1,0 +1,64 @@
+////////////////////////////////////////////////////////////////////////////////
+// LazuliteDebug
+// IoT環境センサから受信したデータをDebug表示するサンプルです。
+//
+//                                              Copyright (c) 2018 Wataru KUNINO
+////////////////////////////////////////////////////////////////////////////////
+//
+// Node-RED用 UDP Logger Example JSON形式
+// コメント行は転送時に自動削除されます
+//
+
+[
+    {
+        "id": "c5c3d008.e6ed3",
+        "type": "tab",
+        "label": "LazuliteDebug",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "71d4fadd.a41514",
+        "type": "lazurite-rx",
+        "z": "c5c3d008.e6ed3",
+        "channel": "4820d58.ab5e22c",
+        "interval": "10",
+        "enbinterval": true,
+        "latestpacket": false,
+        "broadcastenb": true,
+        "name": "",
+        "x": 90,
+        "y": 40,
+        "wires": [
+            [
+                "137e9bcd.d5405c"
+            ]
+        ]
+    },
+    {
+        "id": "137e9bcd.d5405c",
+        "type": "debug",
+        "z": "c5c3d008.e6ed3",
+        "name": "",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "x": 170,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "4820d58.ab5e22c",
+        "type": "lazurite-channel",
+        "z": "",
+        "ch": "36",
+        "panid": "0xabcd",
+        "rate": "100",
+        "pwr": "20",
+        "defaultaddress": true,
+        "myaddr": "0",
+        "key": ""
+    }
+]
