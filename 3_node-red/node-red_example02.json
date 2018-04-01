@@ -88,7 +88,7 @@
         "type": "function",
         "z": "eaece3eb.e864b8",
         "name": "d(n):col(n+1)",
-        "func": "return {\n    payload:{\n        \"d5\":msg.payload.col2,\n        \"d6\":msg.payload.col3,\n        \"d7\":msg.payload.col4,\n        \"d8\":msg.payload.col5\n    }\n}",
+        "func": "return {\n    payload:{\n        \"d1\":msg.payload.col2,\n        \"d2\":msg.payload.col3,\n        \"d3\":msg.payload.col4,\n        \"d4\":msg.payload.col5\n    }\n}",
         "outputs": 1,
         "noerr": 0,
         "x": 190,
