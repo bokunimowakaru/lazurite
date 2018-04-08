@@ -70,7 +70,7 @@ void loop(){
         Serial.print("ERROR ");                 // エラー表示
         SubGHz.msgOut(msg);                     // 応答内容を表示
         digitalWrite(PIN_LED_ORANGE,0);         // エラー表示用LEDを点灯する
-    }
+    }else digitalWrite(PIN_LED_ORANGE,1);       // エラー表示用LEDを消灯する
     SubGHz.close();                             // 通信を切断する
     digitalWrite(PIN_LED_BLUE,1);               // 動作確認用LEDを消灯
     sleep(59000);                               // 59秒間、低消費電力状態で待機
