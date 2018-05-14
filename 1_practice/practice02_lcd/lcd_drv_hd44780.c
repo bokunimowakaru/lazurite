@@ -203,7 +203,7 @@ Lazurite用 LCD HD44780 ドライバ
 //  data=215 -> 1.5ms
 void lcd_delay(unsigned int data)
 {
-    delayMicroseconds( data * 4 + 4 );
+    delayMicroseconds( data * 7 + 4 );
 /*
     unsigned int loop;
     while(data != 0){
