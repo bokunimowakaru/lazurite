@@ -60,6 +60,7 @@ Lazurite用 LCD HD44780 ドライバ
     void lcd_home(void);
     void lcd_control(unsigned char , unsigned char , unsigned char );
     void lcd_goto(unsigned char);
+    void lcd_goto_line(unsigned char);
     void lcd_shift(unsigned char);
     void lcd_putch(char);
     void lcd_putstr(const char *);
