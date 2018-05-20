@@ -238,7 +238,12 @@ void lcd_delay(unsigned int data){
         return;
     #endif
     #ifdef HD44780_STM32L0
-        unsigned int loop;
+        volatile unsigned int loop;
+        if(data>1000){
+            loop=data/1000;
+            HAL_Delay(loop);
+            data -= loop*1000;
+        }
         while(data != 0){
             for(loop=0; loop<10; loop++);
             data--; 
@@ -260,11 +265,11 @@ void lcd_toggle_E(void){
         return;
     #endif
     #ifdef HD44780_LAZURITE
-        lcd_delay(1);       // 140 ns
+        lcd_delay(2);       // 140 ns
         digitalWrite(HD44780_BIT_E,1);
-        lcd_delay(1);       // 450 ns
+        lcd_delay(2);       // 450 ns
         digitalWrite(HD44780_BIT_E,0);
-        lcd_delay(1);       // 10 ns
+        lcd_delay(2);       // 10 ns
         return;
     #endif
     #ifdef HD44780_STM32L0
@@ -321,6 +326,9 @@ void lcd_setup(){
         GPIO_InitStruct.Pull = GPIO_NOPULL;
         GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
         HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12|GPIO_PIN_5|GPIO_PIN_7|GPIO_PIN_2|GPIO_PIN_6, GPIO_PIN_RESET);
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9|GPIO_PIN_8, GPIO_PIN_RESET);
 
         /* digitalWrite(HD44780_BIT_ON,1); */
         HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
@@ -612,7 +620,7 @@ void lcd_init(void)
                             // x111 1111
                             // |___________ 空き
 
-    lcd_delay(20000);       // 15ms以上wait
+    lcd_delay(30000);       // 15ms以上wait
     // デフォルト設定 8bitモード
     uB = LCD_INSTR_INIT8;
     uB |= LCD_PORT_BM;
@@ -623,7 +631,11 @@ void lcd_init(void)
     uB |= LCD_PORT_BM;
     lcd_out(uB);            // LCD_PORT = uB;
     lcd_toggle_E();
-    lcd_delay(200);         // 100us以上wait
+    lcd_delay(1000);        // 100us以上wait
+    uB = LCD_INSTR_INIT8;
+    uB |= LCD_PORT_BM;
+    lcd_out(uB);            // LCD_PORT = uB;
+    lcd_toggle_E();
     // デフォルト設定 8bit->4bitモード
     uB = LCD_INSTR_INIT4;
     uB |= LCD_PORT_BM;
@@ -635,6 +647,7 @@ void lcd_init(void)
     uB |= LCD_PORT_BM;
     lcd_out(uB);            // LCD_PORT = uB;
     lcd_toggle_E();
+    lcd_delay(80);          //wait 40us
     uB = LCD_INSTR_FC_Lo;
     uB |= LCD_PORT_BM;
     lcd_out(uB);            // LCD_PORT = uB;
@@ -645,6 +658,7 @@ void lcd_init(void)
     uB |= LCD_PORT_BM;
     lcd_out(uB);            // LCD_PORT = uB;
     lcd_toggle_E();
+    lcd_delay(80);          //wait 40us
     uB = LCD_INSTR_INICON_Lo;
     uB |= LCD_PORT_BM;
     lcd_out(uB);            // LCD_PORT = uB;
@@ -655,6 +669,7 @@ void lcd_init(void)
     uB |= LCD_PORT_BM;
     lcd_out(uB);            // LCD_PORT = uB;
     lcd_toggle_E();
+    lcd_delay(80);          //wait 40us
     uB = LCD_INSTR_ENT_Lo;
     uB |= LCD_PORT_BM;
     lcd_out(uB);            // LCD_PORT = uB;
