@@ -1,6 +1,8 @@
 /*******************************************************************************
-Lazurite用 LCD HD44780 ドライバ
-
+LCD HD44780 ドライバ
+ - H8 Tiny用
+ - Lazurite用
+ - STM32L0用
                                            Copyright (c) 2010-2018 Wataru KUNINO
 *******************************************************************************/
 
@@ -52,14 +54,18 @@ Lazurite用 LCD HD44780 ドライバ
 
 /*
 
-    HD44780 Arduino Lazurite
-    RS      D8      P57
-    E       D9      P52
-    DB4     D4      P42
-    DB5     D5      P43
-    DB6     D6      P32
-    DB7     D7      P33
-    ON      D10     P37/SS
+    HD44780 H8 Tiny Arduino Lazurite STM32L0
+    -----------------------------------------
+    RS      57      D8      P57     PA9
+    E       52      D9      P52     PB12
+    -----------------------------------------
+    DB4     42      D4      P42     PB5
+    DB5     43      D5      P43     PB7
+    DB6     32      D6      P32     PB2
+    DB7     33      D7      P33     PA8
+    -----------------------------------------
+    ON      37      D10     P37/SS  PB6
+    -----------------------------------------
 */
 
 // H8 Tiny用
@@ -74,32 +80,47 @@ Lazurite用 LCD HD44780 ドライバ
 //  ||_____________ P56: 空き   out (旧E)
 //  |______________ P57: 空き   ---
 
-#include "lazurite.h"
+// マイコンの選択
+//  #define     HD44780_H8TINY
+    #define     HD44780_LAZURITE
+//  #define     HD44780_STM32L0
+
+#ifdef HD44780_LAZURITE
+    #include "lazurite.h"
+#endif
+#ifdef HD44780_STM32L0
+    #include "stm32l0xx_hal.h"
+#endif
+
 #include "lcd_drv_hd44780.h"
 
-/* 
-// Lazurite ピン配列
-#define     HD44780_BIT_RS          57
-#define     HD44780_BIT_E           52
-#define     HD44780_BIT_DB4         42
-#define     HD44780_BIT_DB5         43
-#define     HD44780_BIT_DB6         32
-#define     HD44780_BIT_DB7         33
-#define     HD44780_BIT_ON          37
-*/
-#define     HD44780_BIT_RS          8
-#define     HD44780_BIT_E           9
-#define     HD44780_BIT_DB4         4
-#define     HD44780_BIT_DB5         5
-#define     HD44780_BIT_DB6         6
-#define     HD44780_BIT_DB7         7
-#define     HD44780_BIT_ON          10
-
-#define     LCD_PORT_BM     0x00
-// #define  LCD_PORT        0x3F                        // P5x
-// #define  LCD_OUT_MASK    0xD0                        // P56-P57,P54 masked
-// #define  LCD_PORT_BM     (LCD_PORT & LCD_OUT_MASK)   // LCD
-// #define  LCD_PCR_PORT    IO.PCR5                     // P5ポート出力方向
+// ピン配列
+#ifdef HD44780_H8TINY
+    #define     HD44780_BIT_RS          57
+    #define     HD44780_BIT_E           52
+    #define     HD44780_BIT_DB4         42
+    #define     HD44780_BIT_DB5         43
+    #define     HD44780_BIT_DB6         32
+    #define     HD44780_BIT_DB7         33
+    #define     HD44780_BIT_ON          37
+    #define     LCD_PORT        0x3F                        // P5x
+    #define     LCD_OUT_MASK    0xD0                        // P56-P57,P54 masked
+    #define     LCD_PORT_BM     (LCD_PORT & LCD_OUT_MASK)   // LCD
+    #define     LCD_PCR_PORT    IO.PCR5                     // P5ポート出力方向
+#endif
+#ifdef HD44780_LAZURITE
+    #define     HD44780_BIT_RS          8
+    #define     HD44780_BIT_E           9
+    #define     HD44780_BIT_DB4         4
+    #define     HD44780_BIT_DB5         5
+    #define     HD44780_BIT_DB6         6
+    #define     HD44780_BIT_DB7         7
+    #define     HD44780_BIT_ON          10
+    #define     LCD_PORT_BM     0x00
+#endif
+#ifdef HD44780_STM32L0
+    #define     LCD_PORT_BM     0x00
+#endif
 
 // インストラクション
 //(1)表示クリア
@@ -201,61 +222,143 @@ Lazurite用 LCD HD44780 ドライバ
 //  data=10  -> 70us
 //  data=100 -> 0.7ms
 //  data=215 -> 1.5ms
-void lcd_delay(unsigned int data)
-{
-    delayMicroseconds( data * 7 + 4 );
-/*
-    unsigned int loop;
-    while(data != 0){
-        for(loop=0; loop<WAIT_CNT; loop++);
-        data--; 
-    }
-*/
+void lcd_delay(unsigned int data){
+    #ifdef HD44780_H8TINY
+        unsigned int loop;
+        data /= 7;
+        while(data != 0){
+            for(loop=0; loop<WAIT_CNT; loop++);
+            data--; 
+        }
+        return;
+    #endif
+    #ifdef HD44780_LAZURITE
+        delayMicroseconds( data );
+    //  delayMicroseconds( data * 7 + 4 );  // 初期バージョン
+        return;
+    #endif
+    #ifdef HD44780_STM32L0
+        unsigned int loop;
+        while(data != 0){
+            for(loop=0; loop<10; loop++);
+            data--; 
+        }
+        return;
+    #endif
 }
 
 /*--------------------------------------------------
  *  Clock(E)
  *--------------------------------------------------*/
-void lcd_toggle_E(void)
-{
-    delayMicroseconds(140);
-    digitalWrite(HD44780_BIT_E,1);
-    delayMicroseconds(450);
-    digitalWrite(HD44780_BIT_E,0);
-    delayMicroseconds(10);
-/*
-    // tAS MIN=140ns
-    HD44780_BIT_E = 1;      // E=1
-    // PW_EH MIN=450ns
-    HD44780_BIT_E = 0;      // E=0
-    // tAH MIN=10ns
-*/
+void lcd_toggle_E(void){
+    #ifdef HD44780_H8TINY
+        // tAS MIN=140ns
+        HD44780_BIT_E = 1;      // E=1
+        // PW_EH MIN=450ns
+        HD44780_BIT_E = 0;      // E=0
+        // tAH MIN=10ns
+        return;
+    #endif
+    #ifdef HD44780_LAZURITE
+        lcd_delay(1);       // 140 ns
+        digitalWrite(HD44780_BIT_E,1);
+        lcd_delay(1);       // 450 ns
+        digitalWrite(HD44780_BIT_E,0);
+        lcd_delay(1);       // 10 ns
+        return;
+    #endif
+    #ifdef HD44780_STM32L0
+        lcd_delay(1);
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_SET );
+        lcd_delay(1);
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET );
+        lcd_delay(1);
+        return;
+    #endif
 }
 
 /*--------------------------------------------------
- *  GPIO SETUP for Lazurite
+ *  GPIO SETUP
  *--------------------------------------------------*/
 void lcd_setup(){
-    pinMode(HD44780_BIT_RS, OUTPUT);
-    pinMode(HD44780_BIT_E,  OUTPUT);
-    pinMode(HD44780_BIT_DB4,OUTPUT);
-    pinMode(HD44780_BIT_DB5,OUTPUT);
-    pinMode(HD44780_BIT_DB6,OUTPUT);
-    pinMode(HD44780_BIT_DB7,OUTPUT);
-    pinMode(HD44780_BIT_ON, OUTPUT);
-    digitalWrite(HD44780_BIT_ON,1);
+    #ifdef HD44780_H8TINY
+        return;
+    #endif
+    #ifdef HD44780_LAZURITE
+        pinMode(HD44780_BIT_RS, OUTPUT);
+        pinMode(HD44780_BIT_E,  OUTPUT);
+        pinMode(HD44780_BIT_DB4,OUTPUT);
+        pinMode(HD44780_BIT_DB5,OUTPUT);
+        pinMode(HD44780_BIT_DB6,OUTPUT);
+        pinMode(HD44780_BIT_DB7,OUTPUT);
+        pinMode(HD44780_BIT_ON, OUTPUT);
+        digitalWrite(HD44780_BIT_ON,1);
+        return;
+    #endif
+    #ifdef HD44780_STM32L0
+        GPIO_InitTypeDef GPIO_InitStruct;
+
+        /* GPIO Ports Clock Enable */
+        __HAL_RCC_GPIOB_CLK_ENABLE();
+        __HAL_RCC_GPIOA_CLK_ENABLE();
+
+        /*Configure GPIO pin Output Level */
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12|GPIO_PIN_5|GPIO_PIN_7|GPIO_PIN_2|GPIO_PIN_6, GPIO_PIN_RESET);
+
+        /*Configure GPIO pin Output Level */
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9|GPIO_PIN_8, GPIO_PIN_RESET);
+
+        /*Configure GPIO pins : PB12 PB5 PB7 PB2 PB6 */
+        GPIO_InitStruct.Pin = GPIO_PIN_12|GPIO_PIN_5|GPIO_PIN_7|GPIO_PIN_2|GPIO_PIN_6;
+        GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+        GPIO_InitStruct.Pull = GPIO_NOPULL;
+        GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+        HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+        /*Configure GPIO pin : PA9 PA8 */
+        GPIO_InitStruct.Pin = GPIO_PIN_9|GPIO_PIN_8;
+        GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+        GPIO_InitStruct.Pull = GPIO_NOPULL;
+        GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+        HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+        /* digitalWrite(HD44780_BIT_ON,1); */
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_6, GPIO_PIN_SET);
+        return;
+    #endif
 }
 
 /*--------------------------------------------------
  *  GPIO OUTPUT for Lazurite
  *--------------------------------------------------*/
 void lcd_out(unsigned char  uB){
-    digitalWrite(HD44780_BIT_DB4,   (uB>>0) & 0x01 );
-    digitalWrite(HD44780_BIT_DB5,   (uB>>1) & 0x01 );
-    digitalWrite(HD44780_BIT_DB6,   (uB>>2) & 0x01 );
-    digitalWrite(HD44780_BIT_DB7,   (uB>>3) & 0x01 );
-    digitalWrite(HD44780_BIT_RS,    (uB>>5) & 0x01 );
-    digitalWrite(HD44780_BIT_E,     (uB>>4) & 0x01 );
+    #ifdef HD44780_H8TINY
+        return;
+    #endif
+    #ifdef HD44780_LAZURITE
+        digitalWrite(HD44780_BIT_DB4,   (uB>>0) & 0x01 );
+        digitalWrite(HD44780_BIT_DB5,   (uB>>1) & 0x01 );
+        digitalWrite(HD44780_BIT_DB6,   (uB>>2) & 0x01 );
+        digitalWrite(HD44780_BIT_DB7,   (uB>>3) & 0x01 );
+        digitalWrite(HD44780_BIT_RS,    (uB>>5) & 0x01 );
+        digitalWrite(HD44780_BIT_E,     (uB>>4) & 0x01 );
+        return;
+    #endif
+    #ifdef HD44780_STM32L0
+        /* digitalWrite(HD44780_BIT_DB4,   (uB>>0) & 0x01 ); */
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5,((uB>>0)&0x01)? GPIO_PIN_SET : GPIO_PIN_RESET);
+        /* digitalWrite(HD44780_BIT_DB5,   (uB>>1) & 0x01 ); */
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_7,((uB>>1)&0x01)? GPIO_PIN_SET : GPIO_PIN_RESET);
+        /* digitalWrite(HD44780_BIT_DB6,   (uB>>2) & 0x01 ); */
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2,((uB>>2)&0x01)? GPIO_PIN_SET : GPIO_PIN_RESET);
+        /* digitalWrite(HD44780_BIT_DB7,   (uB>>3) & 0x01 ); */
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8,((uB>>3)&0x01)? GPIO_PIN_SET : GPIO_PIN_RESET);
+        /* digitalWrite(HD44780_BIT_RS,    (uB>>5) & 0x01 ); */
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_9,((uB>>5)&0x01)? GPIO_PIN_SET : GPIO_PIN_RESET);
+        /* digitalWrite(HD44780_BIT_E,     (uB>>4) & 0x01 ); */
+        HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12,((uB>>4)&0x01)? GPIO_PIN_SET : GPIO_PIN_RESET);
+        return;
+    #endif
 }
 
 /*--------------------------------------------------
@@ -273,7 +376,7 @@ void lcd_cls(void)
     uB |= LCD_PORT_BM;
     lcd_out(uB);                // LCD_PORT = uB;
     lcd_toggle_E();
-    lcd_delay(250);             //wait 1.6ms
+    lcd_delay(2000);            //wait 1.6ms
 }
 
 /*--------------------------------------------------
@@ -291,7 +394,7 @@ void lcd_home(void)
     uB |= LCD_PORT_BM;
     lcd_out(uB);                // LCD_PORT = uB;
     lcd_toggle_E();
-    lcd_delay(250);             //wait 1.6ms
+    lcd_delay(2000);             //wait 1.6ms
 }
 
 /*--------------------------------------------------
@@ -313,7 +416,7 @@ void lcd_control(unsigned char disonoff, unsigned char curonoff, unsigned char c
     uB |= LCD_PORT_BM;
     lcd_out(uB);                    // LCD_PORT = uB;
     lcd_toggle_E();
-    lcd_delay(10);                  //wait 40us
+    lcd_delay(80);                  //wait 40us
 }
 
 /*--------------------------------------------------
@@ -336,17 +439,17 @@ void lcd_goto(unsigned char mesto)
     uB |= LCD_PORT_BM;
     lcd_out(uB);                // LCD_PORT = uB;
     lcd_toggle_E();
-    lcd_delay(10);              //wait 40us
+    lcd_delay(80);              //wait 40us
 }
 
 void lcd_goto_line(unsigned char line){
-	switch(line){
-		case 1:	lcd_goto(LCD_ROW_1);	break;
-		case 2:	lcd_goto(LCD_ROW_2);	break;
-		case 3:	lcd_goto(LCD_ROW_3);	break;
-		case 4:	lcd_goto(LCD_ROW_4);	break;
-		default:						break;
-	}
+    switch(line){
+        case 1: lcd_goto(LCD_ROW_1);    break;
+        case 2: lcd_goto(LCD_ROW_2);    break;
+        case 3: lcd_goto(LCD_ROW_3);    break;
+        case 4: lcd_goto(LCD_ROW_4);    break;
+        default:                        break;
+    }
 }
 
 /*--------------------------------------------------
@@ -365,7 +468,7 @@ void lcd_shift(unsigned char data)
     uB |= LCD_PORT_BM;
     lcd_out(uB);                // LCD_PORT = uB;
     lcd_toggle_E();
-    lcd_delay(10);              //wait 40us
+    lcd_delay(80);              //wait 40us
 }
 
 /*--------------------------------------------------
@@ -387,7 +490,7 @@ void lcd_putch(char data)
     uB |= LCD_PORT_BM;
     lcd_out(uB);                // LCD_PORT = uB;
     lcd_toggle_E();
-    lcd_delay(10);              //wait 40us
+    lcd_delay(80);              //wait 40us
 }
 
 /*--------------------------------------------------
@@ -509,24 +612,24 @@ void lcd_init(void)
                             // x111 1111
                             // |___________ 空き
 
-    lcd_delay(2500);        // 15ms以上wait
+    lcd_delay(20000);       // 15ms以上wait
     // デフォルト設定 8bitモード
     uB = LCD_INSTR_INIT8;
     uB |= LCD_PORT_BM;
     lcd_out(uB);            // LCD_PORT = uB;
     lcd_toggle_E();
-    lcd_delay(750);         // 5ms以上wait
+    lcd_delay(7500);        // 5ms以上wait
     uB = LCD_INSTR_INIT8;
     uB |= LCD_PORT_BM;
     lcd_out(uB);            // LCD_PORT = uB;
     lcd_toggle_E();
-    lcd_delay(20);          // 100us以上wait
+    lcd_delay(200);         // 100us以上wait
     // デフォルト設定 8bit->4bitモード
     uB = LCD_INSTR_INIT4;
     uB |= LCD_PORT_BM;
     lcd_out(uB);            // LCD_PORT = uB;
     lcd_toggle_E();
-    lcd_delay(10);          //wait 40us
+    lcd_delay(80);          //wait 40us
     // ファンクションセット
     uB = LCD_INSTR_FC_Hi;
     uB |= LCD_PORT_BM;
@@ -536,7 +639,7 @@ void lcd_init(void)
     uB |= LCD_PORT_BM;
     lcd_out(uB);            // LCD_PORT = uB;
     lcd_toggle_E();
-    lcd_delay(10);          //wait 40us
+    lcd_delay(80);          //wait 40us
     // 表示on/off初期化
     uB = LCD_INSTR_INICON_Hi;
     uB |= LCD_PORT_BM;
@@ -546,7 +649,7 @@ void lcd_init(void)
     uB |= LCD_PORT_BM;
     lcd_out(uB);            // LCD_PORT = uB;
     lcd_toggle_E();
-    lcd_delay(10);          //wait 40us
+    lcd_delay(80);          //wait 40us
     // エントリーモードセット
     uB = LCD_INSTR_ENT_Hi;
     uB |= LCD_PORT_BM;
@@ -556,7 +659,7 @@ void lcd_init(void)
     uB |= LCD_PORT_BM;
     lcd_out(uB);            // LCD_PORT = uB;
     lcd_toggle_E();
-    lcd_delay(10);          //wait 40us
+    lcd_delay(80);          //wait 40us
 
     lcd_cls();              // 表示クリア
     lcd_control(1,0,0);
