@@ -211,10 +211,8 @@ LCD HD44780 ドライバ
 //    ||___________ RW = 0
 //    |____________ RS = 1
 
-/*--------------------------------------------------
- *  delay for Lazurite
- *--------------------------------------------------*/
 #define     WAIT_CNT    10  // 16MHz -> 62.5ns/cyc
+// Delay for H8 tiny
 //  optimize(o3)
 //  data=0   -> 3.5us
 //  data=1   -> 10.5us
@@ -222,6 +220,9 @@ LCD HD44780 ドライバ
 //  data=10  -> 70us
 //  data=100 -> 0.7ms
 //  data=215 -> 1.5ms
+
+unsigned char HD44780_line=1;
+
 void lcd_delay(unsigned int data){
     #ifdef HD44780_H8TINY
         unsigned int loop;
@@ -384,7 +385,7 @@ void lcd_cls(void)
     uB |= LCD_PORT_BM;
     lcd_out(uB);                // LCD_PORT = uB;
     lcd_toggle_E();
-    lcd_delay(2000);            //wait 1.6ms
+    lcd_delay(2000);            // wait 1.6ms
 }
 
 /*--------------------------------------------------
@@ -402,7 +403,7 @@ void lcd_home(void)
     uB |= LCD_PORT_BM;
     lcd_out(uB);                // LCD_PORT = uB;
     lcd_toggle_E();
-    lcd_delay(2000);             //wait 1.6ms
+    lcd_delay(2000);            // wait 1.6ms
 }
 
 /*--------------------------------------------------
@@ -418,13 +419,13 @@ void lcd_control(unsigned char disonoff, unsigned char curonoff, unsigned char c
     lcd_toggle_E();
     // 2nd
     uB = LCD_INSTR_CON_Lo;
-    if (disonoff==1) uB |= 0x04;    //D 1:表示on/0:表示off
-    if (curonoff==1) uB |= 0x02;    //C 1:カーソルon/0:カーソルoff
-    if (curblink==1) uB |= 0x01;    //B 1:ブリンクon/ブリンクoff
+    if (disonoff==1) uB |= 0x04;    // D 1:表示on/0:表示off
+    if (curonoff==1) uB |= 0x02;    // C 1:カーソルon/0:カーソルoff
+    if (curblink==1) uB |= 0x01;    // B 1:ブリンクon/ブリンクoff
     uB |= LCD_PORT_BM;
     lcd_out(uB);                    // LCD_PORT = uB;
     lcd_toggle_E();
-    lcd_delay(80);                  //wait 40us
+    lcd_delay(80);                  // wait 40us
 }
 
 /*--------------------------------------------------
@@ -435,29 +436,40 @@ void lcd_goto(unsigned char mesto)
 {
     unsigned char   temp, uB;
     
-    temp = mesto>>4;            //上位アドレス
+    if( mesto < 20 ) mesto += HD44780_line; // 行移動
+    temp = mesto>>4;            // 上位アドレス
     uB = LCD_INSTR_GOTO_Hi;     // 1st
     uB |= temp; 
     uB |= LCD_PORT_BM;
     lcd_out(uB);                // LCD_PORT = uB;
     lcd_toggle_E();
-    temp = mesto & 0x0F;        //下位アドレス
+    temp = mesto & 0x0F;        // 下位アドレス
     uB = LCD_INSTR_GOTO_Lo;     // 2nd
     uB |= temp;
     uB |= LCD_PORT_BM;
     lcd_out(uB);                // LCD_PORT = uB;
     lcd_toggle_E();
-    lcd_delay(80);              //wait 40us
+    lcd_delay(80);              // wait 40us
 }
 
 void lcd_goto_line(unsigned char line){
     switch(line){
-        case 1: lcd_goto(LCD_ROW_1);    break;
-        case 2: lcd_goto(LCD_ROW_2);    break;
-        case 3: lcd_goto(LCD_ROW_3);    break;
-        case 4: lcd_goto(LCD_ROW_4);    break;
+        case 1: HD44780_line=LCD_ROW_1; break;
+        case 2: HD44780_line=LCD_ROW_2; break;
+        case 3: HD44780_line=LCD_ROW_3; break;
+        case 4: HD44780_line=LCD_ROW_4; break;
         default:                        break;
     }
+    lcd_goto(0);
+    /*
+    switch(line){
+        case 1: lcd_goto(LCD_ROW_1); break;
+        case 2: lcd_goto(LCD_ROW_2); break;
+        case 3: lcd_goto(LCD_ROW_3); break;
+        case 4: lcd_goto(LCD_ROW_4); break;
+        default:                     break;
+    }
+    */
 }
 
 /*--------------------------------------------------
@@ -620,61 +632,63 @@ void lcd_init(void)
                             // x111 1111
                             // |___________ 空き
 
-    lcd_delay(30000);       // 15ms以上wait
+    lcd_delay(50000);       // 15ms以上wait AQM=30ms
     // デフォルト設定 8bitモード
     uB = LCD_INSTR_INIT8;
     uB |= LCD_PORT_BM;
-    lcd_out(uB);            // LCD_PORT = uB;
+    lcd_out(uB);            // LCD_PORT = ub; 0011
     lcd_toggle_E();
-    lcd_delay(7500);        // 5ms以上wait
+    lcd_delay(5000);        // 4.1ms以上wait
     uB = LCD_INSTR_INIT8;
     uB |= LCD_PORT_BM;
-    lcd_out(uB);            // LCD_PORT = uB;
+    lcd_out(uB);            // LCD_PORT = uB; 0011
     lcd_toggle_E();
-    lcd_delay(1000);        // 100us以上wait
+    lcd_delay(5000);        // 100us以上wait
     uB = LCD_INSTR_INIT8;
     uB |= LCD_PORT_BM;
-    lcd_out(uB);            // LCD_PORT = uB;
+    lcd_out(uB);            // LCD_PORT = uB; 0011
     lcd_toggle_E();
+    lcd_delay(200);         // 100us以上wait
+
     // デフォルト設定 8bit->4bitモード
     uB = LCD_INSTR_INIT4;
     uB |= LCD_PORT_BM;
-    lcd_out(uB);            // LCD_PORT = uB;
+    lcd_out(uB);            // LCD_PORT = uB; 0010
     lcd_toggle_E();
-    lcd_delay(80);          //wait 40us
+    lcd_delay(45);          // wait 39us
+    
     // ファンクションセット
     uB = LCD_INSTR_FC_Hi;
     uB |= LCD_PORT_BM;
-    lcd_out(uB);            // LCD_PORT = uB;
+    lcd_out(uB);            // LCD_PORT = uB; 0010
     lcd_toggle_E();
-    lcd_delay(80);          //wait 40us
     uB = LCD_INSTR_FC_Lo;
     uB |= LCD_PORT_BM;
-    lcd_out(uB);            // LCD_PORT = uB;
+    lcd_out(uB);            // LCD_PORT = uB; 1000
     lcd_toggle_E();
-    lcd_delay(80);          //wait 40us
+    lcd_delay(45);          // wait 39us
+
     // 表示on/off初期化
     uB = LCD_INSTR_INICON_Hi;
     uB |= LCD_PORT_BM;
-    lcd_out(uB);            // LCD_PORT = uB;
+    lcd_out(uB);            // LCD_PORT = uB; 0000
     lcd_toggle_E();
-    lcd_delay(80);          //wait 40us
     uB = LCD_INSTR_INICON_Lo;
     uB |= LCD_PORT_BM;
-    lcd_out(uB);            // LCD_PORT = uB;
+    lcd_out(uB);            // LCD_PORT = uB; 1111
     lcd_toggle_E();
-    lcd_delay(80);          //wait 40us
+    lcd_delay(2000);        // wait more than 1.53ms
+
     // エントリーモードセット
     uB = LCD_INSTR_ENT_Hi;
     uB |= LCD_PORT_BM;
-    lcd_out(uB);            // LCD_PORT = uB;
+    lcd_out(uB);            // LCD_PORT = uB; 0000
     lcd_toggle_E();
-    lcd_delay(80);          //wait 40us
     uB = LCD_INSTR_ENT_Lo;
     uB |= LCD_PORT_BM;
-    lcd_out(uB);            // LCD_PORT = uB;
+    lcd_out(uB);            // LCD_PORT = uB; 0110
     lcd_toggle_E();
-    lcd_delay(80);          //wait 40us
+    lcd_delay(45);          // wait 39us
 
     lcd_cls();              // 表示クリア
     lcd_control(1,0,0);
