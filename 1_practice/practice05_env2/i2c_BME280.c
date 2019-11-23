@@ -192,6 +192,7 @@ static void start(){
 }
 
 static void stop(){
+    delay(10);
     writeReg(BME280_REG_ctrl_meas, 0x00);		// reg 0xF4 = 0x00
 }
 
