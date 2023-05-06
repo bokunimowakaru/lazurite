@@ -1,5 +1,7 @@
 # lazurite
 
+![Lazurite](https://bokunimo.net/cq/lazurite/P1030545w.jpg)
+
 ## 解説書
 下記からPDF版の解説書をダウンロードすることが出来ます。  
 ただし、記事内の URL http://www.lapis-semi.com/lazurite-jp/ については、すでに閉鎖となっています（2022年5月）。
